@@ -1,0 +1,4 @@
+{"message":"Bookmark with id 2 not found","level":"error"}
+{"message":"Bookmark with id 95a8f951-5533-48ff-a04e-180fa9e4480c created","level":"info"}
+{"message":"Bookmark with id 95a8f951-5533-48ff-a04e-180fa9e4480c not found.","level":"error"}
+{"message":"Bookmark with id 0 deleted.","level":"info"}
