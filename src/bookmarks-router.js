@@ -1,3 +1,4 @@
+const path = require('path')
 const express = require('express')
 const { v4: uuid } = require('uuid')
 const xss = require('xss')
@@ -9,7 +10,7 @@ const jsonParser = express.json()
 const starRating = ["1", "2", "3", "4", "5"]
 
 bookmarksRouter
-    .route('/bookmarks')
+    .route('/api/bookmarks')
     .get((req, res, next) => {
         const knexInstance = req.app.get('db')
         BookmarksService.getAllBookmarks(knexInstance)
@@ -39,13 +40,16 @@ bookmarksRouter
         BookmarksService.insertBookmark(knexInstance, newBookmark)
             .then(bookmark => {
                 logger.info(`Bookmark with id ${bookmark.id} created`);
-                res.status(201).location(`/bookmarks/${bookmark.id}`).json(bookmark);
+                res
+                    .status(201)
+                    .location(path.posix.join(req.originalUrl, `/${bookmark.id}`))
+                    .json(bookmark);
             })
             .catch(next)
     })
 
 bookmarksRouter
-    .route('/bookmarks/:id')
+    .route('/api/bookmarks/:id')
     .all((req, res, next) => {
         BookmarksService.getById(
             req.app.get('db'),
@@ -68,6 +72,25 @@ bookmarksRouter
             rating: xss(res.bookmark.rating),
             url: xss(res.bookmark.url),
         })
+    })
+    .patch(jsonParser, (req, res, next) => {
+        const { title, description, rating, url } = req.body
+        const bookmarkToUpdate = { title, description, rating, url }
+
+        const numberOfValues = Object.values(bookmarkToUpdate).filter(Boolean).length
+        if (numberOfValues === 0) {
+            return res.status(400).json({ error: { message: `Request body must contain either 'title', 'description', 'rating' or 'url'` } })
+        }
+
+        BookmarksService.updateBookmark(
+            req.app.get('db'),
+            req.params.id,
+            bookmarkToUpdate
+        )
+            .then(() => {
+                res.status(204).end()
+            })
+            .catch(next)
     })
     .delete((req, res, next) => {
         const { id } = req.params;
